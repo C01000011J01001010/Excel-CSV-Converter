@@ -13,13 +13,11 @@ from core.watcher import PipelineWatcher
 from gui.left_panel import LeftPanel
 from gui.right_panel import RightPanel
 
-# 💡 [NEW] 넉넉한 크기와 다크 테마가 적용된 커스텀 입력 다이얼로그 클래스 추가
 class CustomInputDialog(tk.Toplevel):
     def __init__(self, parent, title, prompt):
         super().__init__(parent)
         self.title(title)
         
-        # 창 크기 및 화면 중앙 정렬 설정
         width = 450
         height = 200
         x = parent.winfo_x() + (parent.winfo_width() // 2) - (width // 2)
@@ -158,10 +156,15 @@ class AppGUI(tk.Tk):
             self.watcher.start(self.workspace_root, True)
             self.right_panel.log("🔄 워크스페이스 감시기 재시작 완료.")
 
-    def change_workspace_manual(self):
-        selected_dir = filedialog.askdirectory(title="워크스페이스 변경", initialdir=self.target_dir)
+    def change_workspace_manual(self, predefined_dir=None):
+        if predefined_dir:
+            selected_dir = predefined_dir
+        else:
+            selected_dir = filedialog.askdirectory(title="워크스페이스 변경 (기존 워크스페이스 선택)", initialdir=self.target_dir)
+            
         if not selected_dir: return
         w_root, w_file = find_workspace_root(selected_dir)
+        
         if w_root:
             self.workspace_root = w_root
             self.workspace_file = w_file
@@ -172,7 +175,7 @@ class AppGUI(tk.Tk):
             self.change_dir_force(w_root)
             self._restart_watcher_if_needed()
         else:
-            ans = messagebox.askyesno("안내", "선택하신 경로나 상위 경로에 워크스페이스(.csvdesigndb)가 없습니다.\n\n해당 경로에 새 워크스페이스를 생성하시겠습니까?")
+            ans = messagebox.askyesno("안내", "선택하신 경로나 상위 경로에 워크스페이스가 없습니다.\n\n해당 경로에 새 워크스페이스를 생성하시겠습니까?")
             if ans:
                 self.create_workspace_manual(predefined_dir=selected_dir)
 
@@ -184,14 +187,14 @@ class AppGUI(tk.Tk):
             
         if not selected_dir: return
         
-        # 현재 경로에 이미 워크스페이스 파일이 존재하는지 검사
         existing = [f for f in os.listdir(selected_dir) if f.endswith('.csvdesigndb')]
         if existing:
-            ans = messagebox.askyesno("확인", f"선택한 경로에 이미 워크스페이스({existing[0]})가 존재합니다.\n\n무시하고 새 워크스페이스를 덮어쓰시겠습니까?")
-            if not ans: return
+            ans = messagebox.askyesno("확인", f"선택한 경로에 이미 워크스페이스가 존재합니다.\n({existing[0]})\n\n기존 워크스페이스를 불러오시겠습니까?")
+            if ans:
+                self.change_workspace_manual(predefined_dir=selected_dir)
+            return
             
-        # 💡 [FIX] 좁은 simpledialog 대신 직접 디자인한 CustomInputDialog 호출!
-        dialog = CustomInputDialog(self, "새 워크스페이스 생성", "새 프로젝트(세부 작업공간) 명 입력:")
+        dialog = CustomInputDialog(self, "새 워크스페이스 생성", "워크스페이스(.csvdesigndb) 이름 입력:")
         proj_name = dialog.result
         
         if proj_name:
