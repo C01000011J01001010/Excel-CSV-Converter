@@ -35,7 +35,7 @@ class AppGUI(tk.Tk):
         
         self.include_subdirs = tk.BooleanVar(value=True)
         self.max_combo_var = tk.IntVar(value=2)
-        self.exclude_prefix_var = tk.StringVar(value="Disabled") # 💡 [NEW] Prefix 변수
+        self.exclude_prefix_var = tk.StringVar(value="Disabled")
         self.progress_var = tk.DoubleVar()
 
         self.setup_ui()
@@ -57,8 +57,6 @@ class AppGUI(tk.Tk):
     def load_workspace_config(self):
         if not self.workspace_root or not self.workspace_file: return
         filepath = os.path.join(self.workspace_root, self.workspace_file)
-        
-        # 💡 [FIX] .root -> .csvdesigndb 마이그레이션 레거시 코드 완전히 삭제됨
 
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
@@ -114,7 +112,7 @@ class AppGUI(tk.Tk):
             self.right_panel.log("🔄 워크스페이스 감시기 재시작 완료.")
 
     def change_workspace_manual(self):
-        selected_dir = filedialog.askdirectory(title="워크스페이스 선택/생성", initialdir=self.target_dir)
+        selected_dir = filedialog.askdirectory(title="워크스페이스 변경", initialdir=self.target_dir)
         if not selected_dir: return
         w_root, w_file = find_workspace_root(selected_dir)
         if w_root:
@@ -127,18 +125,38 @@ class AppGUI(tk.Tk):
             self.change_dir_force(w_root)
             self._restart_watcher_if_needed()
         else:
-            proj_name = simpledialog.askstring("워크스페이스 초기화", "프로젝트 명 입력:")
-            if proj_name:
-                w_root, w_file = create_workspace_root(selected_dir, proj_name)
-                if w_root:
-                    self.workspace_root = w_root
-                    self.workspace_file = w_file
-                    self._is_loading_config = True
-                    self.load_workspace_config()
-                    self._is_loading_config = False
-                    self.lbl_workspace.config(text=f"📂 워크스페이스: {self.workspace_root}")
-                    self.change_dir_force(w_root)
-                    self._restart_watcher_if_needed()
+            # 💡 [FIX] 경고 메시지 대신 생성 의사를 묻고 바로 생성 흐름으로 넘깁니다.
+            ans = messagebox.askyesno("안내", "선택하신 경로나 상위 경로에 워크스페이스(.csvdesigndb)가 없습니다.\n\n해당 경로에 새 워크스페이스를 생성하시겠습니까?")
+            if ans:
+                self.create_workspace_manual(predefined_dir=selected_dir)
+
+    # 💡 [FIX] 미리 선택된 경로(predefined_dir)를 받을 수 있도록 파라미터 추가
+    def create_workspace_manual(self, predefined_dir=None):
+        if predefined_dir:
+            selected_dir = predefined_dir
+        else:
+            selected_dir = filedialog.askdirectory(title="새 워크스페이스 생성", initialdir=self.target_dir)
+            
+        if not selected_dir: return
+        
+        # 현재 경로에 이미 워크스페이스 파일이 존재하는지 검사
+        existing = [f for f in os.listdir(selected_dir) if f.endswith('.csvdesigndb')]
+        if existing:
+            ans = messagebox.askyesno("확인", f"선택한 경로에 이미 워크스페이스({existing[0]})가 존재합니다.\n\n무시하고 새 워크스페이스를 덮어쓰시겠습니까?")
+            if not ans: return
+            
+        proj_name = simpledialog.askstring("새 워크스페이스 생성", "새 프로젝트(세부 작업공간) 명 입력:")
+        if proj_name:
+            w_root, w_file = create_workspace_root(selected_dir, proj_name)
+            if w_root:
+                self.workspace_root = w_root
+                self.workspace_file = w_file
+                self._is_loading_config = True
+                self.load_workspace_config()
+                self._is_loading_config = False
+                self.lbl_workspace.config(text=f"📂 워크스페이스: {self.workspace_root}")
+                self.change_dir_force(w_root)
+                self._restart_watcher_if_needed()
 
     def setup_ui(self):
         style = ttk.Style(self)
@@ -173,7 +191,9 @@ class AppGUI(tk.Tk):
         workspace_frame.pack(fill="x")
         self.lbl_workspace = tk.Label(workspace_frame, text="📂 워크스페이스 로드 중...", font=("맑은 고딕", 11, "bold"), fg="#00FF66", bg="#1E1E1E")
         self.lbl_workspace.pack(side="left", padx=20)
-        tk.Button(workspace_frame, text="🔄 워크스페이스 변경/생성", font=("맑은 고딕", 9, "bold"), bg="#007ACC", fg="white", bd=0, command=self.change_workspace_manual).pack(side="right", padx=20)
+        
+        tk.Button(workspace_frame, text="➕ 새 워크스페이스 생성", font=("맑은 고딕", 9, "bold"), bg="#28A745", fg="white", bd=0, command=self.create_workspace_manual).pack(side="right", padx=(5, 20))
+        tk.Button(workspace_frame, text="🔄 워크스페이스 변경", font=("맑은 고딕", 9, "bold"), bg="#007ACC", fg="white", bd=0, command=self.change_workspace_manual).pack(side="right", padx=5)
 
         nav_frame = tk.Frame(self.main_container, bg="#1E1E1E", pady=10, padx=20)
         nav_frame.pack(fill="x")
@@ -191,7 +211,6 @@ class AppGUI(tk.Tk):
         tk.Checkbutton(opt_frame, text="현재 경로의 하위 폴더 포함 (DFS)", variable=self.include_subdirs, font=("맑은 고딕", 10, "bold"),
                        bg="#1E1E1E", fg="#FFD700", selectcolor="#2D2D2D", activebackground="#1E1E1E", activeforeground="white").pack(side="left")
         
-        # 💡 [NEW] 예외 파일 Prefix UI 추가
         tk.Label(opt_frame, text="예외 파일 Prefix (무시할 폴더/파일명):", font=("맑은 고딕", 10, "bold"), fg="#CCCCCC", bg="#1E1E1E").pack(side="left", padx=(30, 5))
         tk.Entry(opt_frame, textvariable=self.exclude_prefix_var, width=15, font=("Consolas", 10), bg="#2D2D2D", fg="white", insertbackground="white").pack(side="left", padx=5)
 
