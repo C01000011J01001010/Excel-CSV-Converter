@@ -3,14 +3,20 @@ from tkinter import ttk
 import re
 import os
 import json
+import csv
 
 def parse_raw_header(header_str):
     name = str(header_str).strip()
+    # 💡 [치명적 버그 수정] UTF-8 파일 맨 앞에 숨어있는 BOM(\ufeff) 문자를 완벽 제거
+    name = name.lstrip('\ufeff') 
+    
+    if name.startswith('"') and name.endswith('"'):
+        name = name[1:-1].strip()
+        
     c_type = "string"
     if name.startswith('{') and name.endswith('}'):
         parts = [p.strip() for p in name[1:-1].split('/')]
         name = parts[0]
-        # 💡 [타입 버그 수정] 대소문자 구분을 없애기 위해 무조건 lower() 적용
         if len(parts) > 1: c_type = parts[1].strip().lower()
     return name, c_type
 
@@ -293,8 +299,6 @@ class ForeignKeyBuilder(tk.Frame):
         if not target_file: return
         
         target_csv_path = os.path.join(self.app.target_dir, target_file)
-        
-        # 💡 [치명적 버그 수정] 타겟 파일의 메타데이터를 찾을 때 .json이 아닌 .csvmeta를 찾도록 수정!!
         target_meta_path = os.path.splitext(target_csv_path)[0] + ".csvmeta"
         
         target_pks = []
@@ -312,22 +316,23 @@ class ForeignKeyBuilder(tk.Frame):
         pk_types = {}
         if os.path.exists(target_csv_path):
             try:
-                with open(target_csv_path, 'r', encoding='utf-8') as f:
-                    first_line = f.readline().strip()
-                    headers = first_line.split(',')
+                # 💡 [치명적 버그 수정] csv 모듈과 utf-8-sig를 사용하여 CSV 구조와 BOM을 완벽히 파싱
+                with open(target_csv_path, 'r', encoding='utf-8-sig') as f:
+                    reader = csv.reader(f)
+                    headers = next(reader)
                     for h in headers:
                         cname, ctype = parse_raw_header(h)
                         if cname in target_pks: pk_types[cname] = ctype
             except: pass
             
-        # 💡 [핵심 버그 픽스] 현재 내 테이블의 컬럼과 그 '타입'을 모두 딕셔너리로 수집합니다.
         local_col_types = {}
         current_csv_path = os.path.join(self.app.target_dir, self.current_file)
         if os.path.exists(current_csv_path):
             try:
-                with open(current_csv_path, 'r', encoding='utf-8') as f:
-                    first_line = f.readline().strip()
-                    headers = first_line.split(',')
+                # 💡 [치명적 버그 수정] csv 모듈과 utf-8-sig를 사용하여 CSV 구조와 BOM을 완벽히 파싱
+                with open(current_csv_path, 'r', encoding='utf-8-sig') as f:
+                    reader = csv.reader(f)
+                    headers = next(reader)
                     for h in headers:
                         cname, ctype = parse_raw_header(h)
                         local_col_types[cname] = ctype
@@ -336,7 +341,6 @@ class ForeignKeyBuilder(tk.Frame):
         for i, pk_col in enumerate(target_pks):
             ptype = pk_types.get(pk_col, "string")
             
-            # 💡 [핵심 버그 픽스] 타겟 PK의 타입(ptype)과 완벽하게 일치하는 컬럼만 필터링합니다!
             matched_local_cols = [c for c, t in local_col_types.items() if t == ptype]
             
             row = tk.Frame(self.mapping_frame, bg="#252526")
