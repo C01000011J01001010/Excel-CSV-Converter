@@ -2,7 +2,7 @@ import os
 import json
 import threading
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
+from tkinter import ttk, messagebox, filedialog
 
 from utils import get_initial_dir, find_workspace_root, create_workspace_root, set_exclude_prefix
 from core.converter import convert_xlsx_file, convert_ansi_csv_to_utf8
@@ -12,6 +12,53 @@ from core.watcher import PipelineWatcher
 
 from gui.left_panel import LeftPanel
 from gui.right_panel import RightPanel
+
+# 💡 [NEW] 넉넉한 크기와 다크 테마가 적용된 커스텀 입력 다이얼로그 클래스 추가
+class CustomInputDialog(tk.Toplevel):
+    def __init__(self, parent, title, prompt):
+        super().__init__(parent)
+        self.title(title)
+        
+        # 창 크기 및 화면 중앙 정렬 설정
+        width = 450
+        height = 200
+        x = parent.winfo_x() + (parent.winfo_width() // 2) - (width // 2)
+        y = parent.winfo_y() + (parent.winfo_height() // 2) - (height // 2)
+        self.geometry(f"{width}x{height}+{x}+{y}")
+        
+        self.configure(bg="#252526")
+        self.resizable(False, False)
+        self.result = None
+
+        self.transient(parent)
+        self.grab_set()
+
+        tk.Label(self, text=prompt, font=("맑은 고딕", 12, "bold"), fg="#CCCCCC", bg="#252526").pack(pady=(30, 10))
+        
+        self.entry = tk.Entry(self, font=("Consolas", 12), width=35, bg="#1E1E1E", fg="white", insertbackground="white", bd=1, relief="solid")
+        self.entry.pack(pady=10, padx=20, fill="x")
+        self.entry.focus_set()
+
+        btn_frame = tk.Frame(self, bg="#252526")
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="확인 (OK)", font=("맑은 고딕", 10, "bold"), bg="#007ACC", fg="white", width=12, bd=0, pady=5, command=self.on_ok).pack(side="left", padx=10)
+        tk.Button(btn_frame, text="취소 (Cancel)", font=("맑은 고딕", 10, "bold"), bg="#444444", fg="white", width=12, bd=0, pady=5, command=self.on_cancel).pack(side="left", padx=10)
+
+        self.bind("<Return>", lambda e: self.on_ok())
+        self.bind("<Escape>", lambda e: self.on_cancel())
+
+        self.protocol("WM_DELETE_WINDOW", self.on_cancel)
+        self.wait_window(self)
+
+    def on_ok(self):
+        self.result = self.entry.get().strip()
+        self.destroy()
+
+    def on_cancel(self):
+        self.result = None
+        self.destroy()
+
 
 class AppGUI(tk.Tk):
     def __init__(self):
@@ -125,12 +172,10 @@ class AppGUI(tk.Tk):
             self.change_dir_force(w_root)
             self._restart_watcher_if_needed()
         else:
-            # 💡 [FIX] 경고 메시지 대신 생성 의사를 묻고 바로 생성 흐름으로 넘깁니다.
             ans = messagebox.askyesno("안내", "선택하신 경로나 상위 경로에 워크스페이스(.csvdesigndb)가 없습니다.\n\n해당 경로에 새 워크스페이스를 생성하시겠습니까?")
             if ans:
                 self.create_workspace_manual(predefined_dir=selected_dir)
 
-    # 💡 [FIX] 미리 선택된 경로(predefined_dir)를 받을 수 있도록 파라미터 추가
     def create_workspace_manual(self, predefined_dir=None):
         if predefined_dir:
             selected_dir = predefined_dir
@@ -145,7 +190,10 @@ class AppGUI(tk.Tk):
             ans = messagebox.askyesno("확인", f"선택한 경로에 이미 워크스페이스({existing[0]})가 존재합니다.\n\n무시하고 새 워크스페이스를 덮어쓰시겠습니까?")
             if not ans: return
             
-        proj_name = simpledialog.askstring("새 워크스페이스 생성", "새 프로젝트(세부 작업공간) 명 입력:")
+        # 💡 [FIX] 좁은 simpledialog 대신 직접 디자인한 CustomInputDialog 호출!
+        dialog = CustomInputDialog(self, "새 워크스페이스 생성", "새 프로젝트(세부 작업공간) 명 입력:")
+        proj_name = dialog.result
+        
         if proj_name:
             w_root, w_file = create_workspace_root(selected_dir, proj_name)
             if w_root:
