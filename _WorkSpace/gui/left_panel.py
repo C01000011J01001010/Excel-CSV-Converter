@@ -68,7 +68,6 @@ class LeftPanel(tk.Frame):
         btn_load = tk.Button(top_frame, text="헤더 로드", font=("맑은 고딕", 9, "bold"), bg="#007ACC", fg="white", bd=0, command=self._t1_load_headers)
         btn_load.pack(side="left", padx=2)
 
-        # 💡 [NEW] 스키마 범위 안내 툴팁 추가
         guide_frame = tk.Frame(self.tab1, bg="#252526", bd=1, relief="solid")
         guide_frame.pack(fill="x", padx=10, pady=(0, 5))
         guide_text = "📌 [안내] `{}` 기호가 포함된 최초의 행/열부터 마지막 `{}` 열까지만 스키마와 데이터로 인식합니다. (바깥 여백 및 메모 무시)"
@@ -120,7 +119,23 @@ class LeftPanel(tk.Frame):
             return
         
         prefix = self.app.exclude_prefix_var.get().strip() or "Disabled"
-        files = get_excel_files(self.app.target_dir, self.app.include_subdirs.get(), prefix)
+        # 💡 [핵심 버그 픽스] target_dir을 기준으로 상대 경로에서만 Prefix 필터링 적용!
+        files = []
+        for root, dirs, files_in_dir in os.walk(self.app.target_dir):
+            rel_root = os.path.relpath(root, self.app.target_dir)
+            if rel_root != '.' and any(p.startswith(prefix) for p in rel_root.replace('\\', '/').split('/')):
+                continue
+                
+            if not self.app.include_subdirs.get() and root != self.app.target_dir:
+                continue
+                
+            for file in files_in_dir:
+                if file.startswith('~$') or file.startswith(prefix):
+                    continue
+                if file.endswith('.xlsx'):
+                    rel_path = os.path.relpath(os.path.join(root, file), self.app.target_dir).replace('\\', '/')
+                    files.append(rel_path)
+
         if files:
             self.t1_combo_files['values'] = files
             self.t1_combo_files.current(0)
@@ -246,7 +261,6 @@ class LeftPanel(tk.Frame):
         scroll_frame.pack(fill="both", expand=True)
         inner = scroll_frame.inner_frame
         
-        # 💡 [NEW] CSV 변환 탭 변환 범위 안내 툴팁
         guide_frame = tk.Frame(inner, bg="#252526", bd=1, relief="solid")
         guide_frame.pack(fill="x", padx=10, pady=(15, 10))
         guide_text = "📌 [파싱 범위 안내]\n\n엑셀 문서에서 `{}` 기호가 처음 시작되는 행과 열부터 마지막 `{}` 열 사이의 데이터만\n유효한 스키마(바운딩 박스) 영역으로 자동 크롭(Crop)되어 CSV로 변환됩니다."
@@ -269,7 +283,6 @@ class LeftPanel(tk.Frame):
         guide_frame = tk.Frame(inner, bg="#252526", bd=1, relief="solid")
         guide_frame.pack(fill="x", padx=10, pady=(15, 10))
         
-        # 💡 [FIX] 3번 탭 툴팁 및 확장자, 설명 수정
         guide_text = "📌 [메타데이터 (슈퍼키) 추출]\n\n배열([])과 float 타입을 배제하고 고유하게 식별 가능한 모든 슈퍼키 조합을 추출하여 JSON 포맷의 .csvmeta 파일로 저장합니다.\n\n※ 엑셀 스키마에 제약조건 \"UNIQUE\"와 \"NOT NULL\"이 동시에 적용된 컬럼을 포함하고 있는 키조합은 내부 유일성 검사 목록에서 제외됩니다.\n    (즉시 슈퍼키로 확정 - Fast Track)"
         tk.Label(guide_frame, text=guide_text, font=("맑은 고딕", 9), fg="#D4D4D4", bg="#252526", justify="left", anchor="w", padx=10, pady=10).pack(fill="x")
 
@@ -278,7 +291,6 @@ class LeftPanel(tk.Frame):
         tk.Label(opt_frame2, text="최대 슈퍼키 조합 길이 (연산량 조절용):", font=("맑은 고딕", 10), fg="#CCCCCC", bg="#1E1E1E").pack(side="left")
         tk.Spinbox(opt_frame2, from_=1, to=10, textvariable=self.app.max_combo_var, width=5, font=("Consolas", 10)).pack(side="left", padx=10)
 
-        # 💡 [FIX] 버튼 텍스트 수정 (.csvmeta 명시)
         self.app.btn4 = tk.Button(inner, text="메타데이터(슈퍼키) 자동 추출 및 .csvmeta 갱신 (현재 경로)", font=("맑은 고딕", 11, "bold"), bg="#9C27B0", fg="white", bd=0, height=3, command=self.app.run_super_key_finder)
         self.app.btn4.pack(fill="x", padx=10, pady=10)
 
@@ -295,7 +307,7 @@ class LeftPanel(tk.Frame):
         
         guide_text = (
             "🛡️ [전체 데이터베이스 무결성 검증]\n\n"
-            "워크스페이스(Root: 폴더 및 하위 폴더) 전체를 대상으로 RDBMS 수준의 5대 무결성을 교차 검증합니다.\n\n"
+            "워크스페이스(Root 폴더 및 모든 하위 폴더) 전체를 대상으로 RDBMS 수준의 5대 무결성을 교차 검증합니다.\n\n"
             "1. 개체 무결성 : 기본키(PK)의 중복 및 빈 칸(Null) 존재 여부\n"
             "2. 참조 무결성 : 외래키(FK)가 가리키는 대상이 실제로 존재하는지 교차 확인\n"
             "3. 도메인 무결성: 데이터 타입의 형식 일치 여부\n"

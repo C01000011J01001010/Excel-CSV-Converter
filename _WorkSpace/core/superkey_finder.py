@@ -17,10 +17,17 @@ def parse_header(raw_str):
 def find_super_keys(target_dir, max_combo, include_subdirs, on_log, on_progress, exclude_prefix="Disabled"):
     csv_files = []
     for root, dirs, files in os.walk(target_dir):
-        if any(p.startswith(exclude_prefix) for p in root.replace('\\', '/').split('/')): continue
-        if not include_subdirs and root != target_dir: continue
+        # 💡 [핵심 버그 픽스] target_dir을 기준으로 상대 경로에서만 Prefix 필터링 적용!
+        rel_root = os.path.relpath(root, target_dir)
+        if rel_root != '.' and any(p.startswith(exclude_prefix) for p in rel_root.replace('\\', '/').split('/')):
+            continue
+            
+        if not include_subdirs and root != target_dir:
+            continue
+            
         for file in files:
-            if file.startswith(exclude_prefix): continue
+            if file.startswith(exclude_prefix):
+                continue
             if file.endswith('.csv'):
                 csv_files.append(os.path.join(root, file))
 
@@ -31,7 +38,6 @@ def find_super_keys(target_dir, max_combo, include_subdirs, on_log, on_progress,
     total_files = len(csv_files)
     for i, csv_file in enumerate(csv_files):
         rel_path = os.path.relpath(csv_file, target_dir)
-        # 💡 [FIX] .json -> .csvmeta 확장자로 완벽 변경
         json_file = os.path.splitext(csv_file)[0] + ".csvmeta"
         
         try:

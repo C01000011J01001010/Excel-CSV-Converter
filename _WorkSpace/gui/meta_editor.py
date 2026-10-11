@@ -66,11 +66,17 @@ class MetaEditorTab(tk.Frame):
         json_files = []
         prefix = self.app.exclude_prefix_var.get().strip() or "Disabled"
         for root, dirs, files in os.walk(self.app.target_dir):
-            if any(p.startswith(prefix) for p in root.replace('\\', '/').split('/')): continue
-            if not self.app.include_subdirs.get() and root != self.app.target_dir: continue
+            # 💡 [핵심 버그 픽스] target_dir을 기준으로 상대 경로에서만 Prefix 필터링 적용!
+            rel_root = os.path.relpath(root, self.app.target_dir)
+            if rel_root != '.' and any(p.startswith(prefix) for p in rel_root.replace('\\', '/').split('/')):
+                continue
+                
+            if not self.app.include_subdirs.get() and root != self.app.target_dir:
+                continue
+                
             for file in files:
-                if file.startswith(prefix): continue
-                # 💡 [FIX] .csvmeta 확장자 검색으로 완벽 통일
+                if file.startswith(prefix):
+                    continue
                 if file.endswith('.csvmeta'):
                     rel_path = os.path.relpath(os.path.join(root, file), self.app.target_dir).replace('\\', '/')
                     json_files.append(rel_path)
@@ -153,10 +159,9 @@ class MetaEditorTab(tk.Frame):
         new_fks = {}
         active_builders = []
         
-        # 💡 [핵심 버그 수정] 삭제된 유령 위젯(Ghost reference) 필터링
         for b in self.fk_builders:
             if not b.winfo_exists():
-                continue # 사용자가 '삭제' 버튼을 눌러 파괴된 위젯은 건너뜀
+                continue
                 
             active_builders.append(b)
             data = b.get_data()
@@ -168,7 +173,7 @@ class MetaEditorTab(tk.Frame):
                 "targetTable": data['targetTable']
             }
             
-        self.fk_builders = active_builders # 리스트 깨끗하게 갱신
+        self.fk_builders = active_builders 
         self.meta_data['foreignKeys'] = new_fks
 
         try:

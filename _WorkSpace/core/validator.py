@@ -50,9 +50,14 @@ def format_errors(invalid_series, limit=3):
 def run_global_validation(workspace_root, on_log, on_progress, exclude_prefix="Disabled"):
     csv_files = []
     for root, dirs, files in os.walk(workspace_root):
-        if any(p.startswith(exclude_prefix) for p in root.replace('\\', '/').split('/')): continue
+        # 💡 [핵심 버그 픽스] workspace_root를 기준으로 상대 경로에서만 Prefix 필터링 적용!
+        rel_root = os.path.relpath(root, workspace_root)
+        if rel_root != '.' and any(p.startswith(exclude_prefix) for p in rel_root.replace('\\', '/').split('/')):
+            continue
+            
         for file in files:
-            if file.startswith(exclude_prefix): continue
+            if file.startswith(exclude_prefix):
+                continue
             if file.endswith('.csv'):
                 csv_files.append(os.path.join(root, file))
 
@@ -100,7 +105,6 @@ def run_global_validation(workspace_root, on_log, on_progress, exclude_prefix="D
         file_errors[base_name] = [] 
         
         try:
-            # 💡 [핵심 버그 수정] dtype=str 을 통해 Pandas가 멋대로 .0 을 붙이는 현상 완벽 방어!
             try: df = pd.read_csv(csv_file, encoding='utf-8-sig', dtype=str)
             except UnicodeDecodeError: df = pd.read_csv(csv_file, encoding='cp949', dtype=str)
             
