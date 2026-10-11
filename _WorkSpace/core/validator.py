@@ -61,14 +61,15 @@ def run_global_validation(workspace_root, on_log, on_progress, exclude_prefix="D
         on_log("❌ 워크스페이스 내에 검증할 CSV 파일이 없습니다.")
         return
 
-    on_log("🔍 1단계: 메타데이터(JSON) 및 기본키(PK) 설정 여부 확인 중...")
+    on_log("🔍 1단계: 메타데이터(.csvmeta) 및 기본키(PK) 설정 여부 확인 중...")
     missing_meta = []
     missing_pk = []
     meta_dict = {}
     df_dict = {}
 
     for csv_file in csv_files:
-        json_file = os.path.splitext(csv_file)[0] + ".json"
+        # 💡 [FIX] .json -> .csvmeta 확장자로 변경
+        json_file = os.path.splitext(csv_file)[0] + ".csvmeta"
         base_name = os.path.basename(csv_file)
         
         if not os.path.exists(json_file):
@@ -86,7 +87,7 @@ def run_global_validation(workspace_root, on_log, on_progress, exclude_prefix="D
     if missing_meta or missing_pk:
         on_log("\n🚨 [검증 중단] 유효한 메타데이터가 없는 테이블이 발견되었습니다.")
         on_log("다음 파일들은 [3. 추출] 및 [4. 메타 관리] 탭에서 기본키(PK)를 먼저 설정해야 무결성 검사가 가능합니다.\n")
-        for f in missing_meta: on_log(f" ❌ {f} (JSON 메타파일 누락 또는 파싱 실패)")
+        for f in missing_meta: on_log(f" ❌ {f} (.csvmeta 메타파일 누락 또는 파싱 실패)")
         for f in missing_pk: on_log(f" ❌ {f} (기본키 미설정)")
         return
 

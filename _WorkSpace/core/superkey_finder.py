@@ -30,9 +30,9 @@ def find_super_keys(target_dir, max_combo, include_subdirs, on_log, on_progress,
 
     total_files = len(csv_files)
     for i, csv_file in enumerate(csv_files):
-        # 💡 [NEW] 경로 포함하여 출력
         rel_path = os.path.relpath(csv_file, target_dir)
-        json_file = os.path.splitext(csv_file)[0] + ".json"
+        # 💡 [FIX] .json -> .csvmeta 확장자로 완벽 변경
+        json_file = os.path.splitext(csv_file)[0] + ".csvmeta"
         
         try:
             try: df = pd.read_csv(csv_file, encoding='utf-8')
@@ -106,4 +106,4 @@ def find_super_keys(target_dir, max_combo, include_subdirs, on_log, on_progress,
         on_log(log_msg)
         on_progress(int((i + 1) / total_files * 100))
 
-    on_log("\n🎉 모든 메타데이터 슈퍼키(JSON) 추출 및 갱신이 완료되었습니다!")
+    on_log("\n🎉 모든 메타데이터 슈퍼키(.csvmeta) 추출 및 갱신이 완료되었습니다!")

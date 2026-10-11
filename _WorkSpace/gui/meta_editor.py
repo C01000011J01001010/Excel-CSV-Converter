@@ -17,7 +17,7 @@ class MetaEditorTab(tk.Frame):
         top_frame = tk.Frame(self, bg="#1E1E1E")
         top_frame.pack(fill="x", padx=10, pady=10)
 
-        tk.Label(top_frame, text="대상 JSON 메타 파일:", font=("맑은 고딕", 10, "bold"), fg="#CCCCCC", bg="#1E1E1E").pack(side="left")
+        tk.Label(top_frame, text="대상 .csvmeta 메타 파일:", font=("맑은 고딕", 10, "bold"), fg="#CCCCCC", bg="#1E1E1E").pack(side="left")
         self.combo_files = ttk.Combobox(top_frame, state="readonly", width=60)
         self.combo_files.pack(side="left", padx=10, fill="x", expand=True)
 
@@ -70,18 +70,19 @@ class MetaEditorTab(tk.Frame):
             if not self.app.include_subdirs.get() and root != self.app.target_dir: continue
             for file in files:
                 if file.startswith(prefix): continue
-                if file.endswith('.json') and not file.endswith('.csvdesigndb'):
+                # 💡 [FIX] .csvmeta 확장자 검색으로 완벽 통일
+                if file.endswith('.csvmeta'):
                     rel_path = os.path.relpath(os.path.join(root, file), self.app.target_dir).replace('\\', '/')
                     json_files.append(rel_path)
 
         if json_files:
             self.combo_files['values'] = json_files
             self.combo_files.current(0)
-            self.app.right_panel.log(f"작업 경로 내 JSON 메타 파일 {len(json_files)}개 스캔 완료.")
+            self.app.right_panel.log(f"작업 경로 내 메타 파일(.csvmeta) {len(json_files)}개 스캔 완료.")
         else:
             self.combo_files['values'] = []
             self.combo_files.set('')
-            self.app.right_panel.log("작업 경로 내에 JSON 메타 파일이 없습니다.")
+            self.app.right_panel.log("작업 경로 내에 메타 파일(.csvmeta)이 없습니다.")
 
     def _load_meta(self):
         rel_path = self.combo_files.get()
@@ -96,7 +97,7 @@ class MetaEditorTab(tk.Frame):
             with open(filepath, 'r', encoding='utf-8') as f:
                 self.meta_data = json.load(f)
         except Exception as e:
-            self.app.right_panel.log(f"❌ JSON 파싱 실패: {e}")
+            self.app.right_panel.log(f"❌ 메타데이터 파싱 실패: {e}")
             return
 
         self._render_pk()
@@ -125,7 +126,7 @@ class MetaEditorTab(tk.Frame):
         self.fk_builders.clear()
 
         fks = self.meta_data.get('foreignKeys', {})
-        current_csv = self.combo_files.get().replace('.json', '.csv')
+        current_csv = self.combo_files.get().replace('.csvmeta', '.csv')
 
         for fk_name, fk_info in fks.items():
             b = ForeignKeyBuilder(self.fk_inner, self.app, current_csv, fk_name, fk_info.get('columns', []), fk_info.get('targetTable', ''))
@@ -133,7 +134,7 @@ class MetaEditorTab(tk.Frame):
             self.fk_builders.append(b)
 
     def _add_fk_builder(self):
-        current_csv = self.combo_files.get().replace('.json', '.csv')
+        current_csv = self.combo_files.get().replace('.csvmeta', '.csv')
         b = ForeignKeyBuilder(self.fk_inner, self.app, current_csv)
         b.pack(fill="x", pady=5)
         self.fk_builders.append(b)

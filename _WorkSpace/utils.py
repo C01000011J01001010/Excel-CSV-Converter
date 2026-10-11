@@ -38,8 +38,7 @@ def find_workspace_root(current_dir):
             files = os.listdir(d)
             for f in files:
                 if f.endswith('.csvdesigndb'): return d, f
-            for f in files:
-                if f.endswith('.root'): return d, f
+            # 💡 [FIX] .root 검색 레거시 코드 삭제
         except Exception: pass
         parent = os.path.dirname(d)
         if parent == d: break

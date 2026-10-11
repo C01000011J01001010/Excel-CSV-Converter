@@ -58,29 +58,7 @@ class AppGUI(tk.Tk):
         if not self.workspace_root or not self.workspace_file: return
         filepath = os.path.join(self.workspace_root, self.workspace_file)
         
-        if self.workspace_file.endswith('.root'):
-            proj_name = self.workspace_file.replace('.root', '').replace('__csvMetaRoot_', '').replace('__', '')
-            if not proj_name: proj_name = "MigratedProject"
-            new_file = f"{proj_name}.csvdesigndb"
-            new_filepath = os.path.join(self.workspace_root, new_file)
-            config_data = {
-                "projectName": proj_name,
-                "toolkitVersion": "1.1.0",
-                "settings": {
-                    "maxSuperkeyLength": self.max_combo_var.get(),
-                    "includeSubDirectories": self.include_subdirs.get(),
-                    "excludePrefix": self.exclude_prefix_var.get()
-                },
-                "created_at": "Migrated from .root"
-            }
-            try:
-                with open(new_filepath, 'w', encoding='utf-8') as f:
-                    json.dump(config_data, f, ensure_ascii=False, indent=4)
-                os.remove(filepath)
-                self.workspace_file = new_file
-                self.right_panel.log(f"🔄 구형 워크스페이스(.root)를 마이그레이션 했습니다.")
-                filepath = new_filepath
-            except Exception: return
+        # 💡 [FIX] .root -> .csvdesigndb 마이그레이션 레거시 코드 완전히 삭제됨
 
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
@@ -363,7 +341,7 @@ class AppGUI(tk.Tk):
             self.set_buttons_state(False)
             self.set_progress(0)
             prefix = self.exclude_prefix_var.get().strip() or "Disabled"
-            self.right_panel.log("\n🚀 [작업 시작] 메타데이터 슈퍼키(JSON) 추출 (Fast-Track 포함)")
+            self.right_panel.log("\n🚀 [작업 시작] 메타데이터 슈퍼키(.csvmeta) 추출 (Fast-Track 포함)")
             find_super_keys(self.target_dir, self.max_combo_var.get(), self.include_subdirs.get(), self.right_panel.log, self.set_progress, prefix)
             self.set_buttons_state(True)
         threading.Thread(target=task, daemon=True).start()
