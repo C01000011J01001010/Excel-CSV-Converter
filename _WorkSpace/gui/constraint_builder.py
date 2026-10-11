@@ -293,12 +293,14 @@ class ForeignKeyBuilder(tk.Frame):
         if not target_file: return
         
         target_csv_path = os.path.join(self.app.target_dir, target_file)
-        target_json_path = os.path.splitext(target_csv_path)[0] + ".json"
+        
+        # 💡 [치명적 버그 수정] 타겟 파일의 메타데이터를 찾을 때 .json이 아닌 .csvmeta를 찾도록 수정!!
+        target_meta_path = os.path.splitext(target_csv_path)[0] + ".csvmeta"
         
         target_pks = []
-        if os.path.exists(target_json_path):
+        if os.path.exists(target_meta_path):
             try:
-                with open(target_json_path, 'r', encoding='utf-8') as f:
+                with open(target_meta_path, 'r', encoding='utf-8') as f:
                     jdata = json.load(f)
                     target_pks = jdata.get('primaryKey', [])
             except: pass
