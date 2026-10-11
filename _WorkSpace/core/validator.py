@@ -47,7 +47,6 @@ def format_errors(invalid_series, limit=3):
     if total > limit: res += f" (외 {total - limit}건)"
     return res
 
-# 💡 [NEW] exclude_prefix 매개변수 추가
 def run_global_validation(workspace_root, on_log, on_progress, exclude_prefix="Disabled"):
     csv_files = []
     for root, dirs, files in os.walk(workspace_root):
@@ -68,7 +67,6 @@ def run_global_validation(workspace_root, on_log, on_progress, exclude_prefix="D
     df_dict = {}
 
     for csv_file in csv_files:
-        # 💡 [FIX] .json -> .csvmeta 확장자로 변경
         json_file = os.path.splitext(csv_file)[0] + ".csvmeta"
         base_name = os.path.basename(csv_file)
         
@@ -102,8 +100,9 @@ def run_global_validation(workspace_root, on_log, on_progress, exclude_prefix="D
         file_errors[base_name] = [] 
         
         try:
-            try: df = pd.read_csv(csv_file, encoding='utf-8')
-            except UnicodeDecodeError: df = pd.read_csv(csv_file, encoding='cp949')
+            # 💡 [핵심 버그 수정] dtype=str 을 통해 Pandas가 멋대로 .0 을 붙이는 현상 완벽 방어!
+            try: df = pd.read_csv(csv_file, encoding='utf-8-sig', dtype=str)
+            except UnicodeDecodeError: df = pd.read_csv(csv_file, encoding='cp949', dtype=str)
             
             rename_map = {}
             col_info = {}
