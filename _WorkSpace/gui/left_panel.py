@@ -269,7 +269,8 @@ class LeftPanel(tk.Frame):
         guide_frame = tk.Frame(inner, bg="#252526", bd=1, relief="solid")
         guide_frame.pack(fill="x", padx=10, pady=(15, 10))
         
-        guide_text = "📌 [메타데이터 (슈퍼키) 추출]\n\n배열([])과 float 타입을 배제하고 고유하게 식별 가능한 모든 슈퍼키 조합을 추출하여 JSON으로 저장합니다.\n※ 엑셀 스키마에 UNIQUE와 NOT NULL이 선언된 컬럼은 내부 검사를 건너뛰어 초고속(Fast-Track)으로 추출됩니다."
+        # 💡 [FIX] 3번 탭 툴팁 및 확장자, 설명 수정
+        guide_text = "📌 [메타데이터 (슈퍼키) 추출]\n\n배열([])과 float 타입을 배제하고 고유하게 식별 가능한 모든 슈퍼키 조합을 추출하여 JSON 포맷의 .csvmeta 파일로 저장합니다.\n\n※ 엑셀 스키마에 제약조건 \"UNIQUE\"와 \"NOT NULL\"이 동시에 적용된 컬럼을 포함하고 있는 키조합은 내부 유일성 검사 목록에서 제외됩니다.\n    (즉시 슈퍼키로 확정 - Fast Track)"
         tk.Label(guide_frame, text=guide_text, font=("맑은 고딕", 9), fg="#D4D4D4", bg="#252526", justify="left", anchor="w", padx=10, pady=10).pack(fill="x")
 
         opt_frame2 = tk.Frame(inner, bg="#1E1E1E")
@@ -277,7 +278,8 @@ class LeftPanel(tk.Frame):
         tk.Label(opt_frame2, text="최대 슈퍼키 조합 길이 (연산량 조절용):", font=("맑은 고딕", 10), fg="#CCCCCC", bg="#1E1E1E").pack(side="left")
         tk.Spinbox(opt_frame2, from_=1, to=10, textvariable=self.app.max_combo_var, width=5, font=("Consolas", 10)).pack(side="left", padx=10)
 
-        self.app.btn4 = tk.Button(inner, text="메타데이터(슈퍼키) 자동 추출 및 JSON 갱신 (현재 경로)", font=("맑은 고딕", 11, "bold"), bg="#9C27B0", fg="white", bd=0, height=3, command=self.app.run_super_key_finder)
+        # 💡 [FIX] 버튼 텍스트 수정 (.csvmeta 명시)
+        self.app.btn4 = tk.Button(inner, text="메타데이터(슈퍼키) 자동 추출 및 .csvmeta 갱신 (현재 경로)", font=("맑은 고딕", 11, "bold"), bg="#9C27B0", fg="white", bd=0, height=3, command=self.app.run_super_key_finder)
         self.app.btn4.pack(fill="x", padx=10, pady=10)
 
         self.app.progress_bar = ttk.Progressbar(inner, variable=self.app.progress_var, maximum=100)
