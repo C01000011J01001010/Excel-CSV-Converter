@@ -1,9 +1,0 @@
-{
-  "csvFileName": "04_monsters_three_column_key.csv",
-  "primaryKey": [
-    "Zone",
-    "DisplayName"
-  ],
-  "foreignKeys": {},
-  "superKeys": []
-}

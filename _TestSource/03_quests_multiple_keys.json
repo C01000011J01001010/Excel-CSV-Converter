@@ -1,8 +1,0 @@
-{
-  "csvFileName": "03_quests_multiple_keys.csv",
-  "primaryKey": [
-    "QuestID"
-  ],
-  "foreignKeys": {},
-  "superKeys": []
-}

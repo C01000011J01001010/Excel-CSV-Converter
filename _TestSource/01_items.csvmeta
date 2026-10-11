@@ -1,18 +1,4 @@
 {
-  "csvFileName": "01_items.csv",
-  "primaryKey": [
-    "ItemID",
-    "ItemName"
-  ],
-  "foreignKeys": {
-    "fix": {
-      "columns": [
-        "ItemID",
-        "ItemName"
-      ],
-      "targetTable": "Disabled/00_Empty.csv"
-    }
-  },
   "superKeys": [
     [
       "ItemID"
@@ -35,7 +21,19 @@
     ],
     [
       "ItemID",
+      "WeaponType"
+    ],
+    [
+      "ItemID",
       "Level"
+    ],
+    [
+      "ItemID",
+      "ShopPrice"
+    ],
+    [
+      "ItemID",
+      "SellPrice"
     ],
     [
       "ItemID",
@@ -55,7 +53,19 @@
     ],
     [
       "ItemName",
+      "WeaponType"
+    ],
+    [
+      "ItemName",
       "Level"
+    ],
+    [
+      "ItemName",
+      "ShopPrice"
+    ],
+    [
+      "ItemName",
+      "SellPrice"
     ],
     [
       "ItemName",
@@ -74,6 +84,18 @@
       "Internal_Name"
     ],
     [
+      "WeaponType",
+      "DisplayText"
+    ],
+    [
+      "WeaponType",
+      "AssetPath"
+    ],
+    [
+      "WeaponType",
+      "Internal_Name"
+    ],
+    [
       "Level",
       "DisplayText"
     ],
@@ -83,6 +105,30 @@
     ],
     [
       "Level",
+      "Internal_Name"
+    ],
+    [
+      "ShopPrice",
+      "DisplayText"
+    ],
+    [
+      "ShopPrice",
+      "AssetPath"
+    ],
+    [
+      "ShopPrice",
+      "Internal_Name"
+    ],
+    [
+      "SellPrice",
+      "DisplayText"
+    ],
+    [
+      "SellPrice",
+      "AssetPath"
+    ],
+    [
+      "SellPrice",
       "Internal_Name"
     ],
     [
@@ -109,5 +155,7 @@
       "AssetPath",
       "Internal_Name"
     ]
-  ]
+  ],
+  "primaryKey": [],
+  "foreignKeys": {}
 }
